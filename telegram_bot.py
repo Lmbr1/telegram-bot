@@ -1,7 +1,7 @@
 import os
 import telebot
 
-TOKEN = os.getenv("8370948641:AAF_7rnTcW6JryMODVJNew8PZwhdTPJ8odc")
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -54,8 +54,11 @@ def mensajes(message):
     texto = message.text.lower()
     user_id = message.chat.id
 
-    if texto == "listo":
-        usuarios[user_id]["saldo"] += 10
+   if user_id not in usuarios:
+    usuarios[user_id] = {"saldo": 0}
+
+if texto == "listo":
+    usuarios[user_id]["saldo"] += 10
         bot.send_message(user_id, "✅ Tarea completada\n💰 +10 Bs agregados")
 
     elif "comprar vip" in texto:
