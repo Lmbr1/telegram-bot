@@ -22,20 +22,8 @@ def start(message):
     "💰 Gana dinero realizando tareas simples\n"
     "📊 Ganancias: 5 - 50 Bs por tarea\n\n"
     "📌 Comandos:\n"
-    "/tarea - Ver tareas\n"
     "/vip - Ver niveles VIP\n"
     "/saldo - Ver saldo")
-
-# ── TAREA ──
-@bot.message_handler(commands=["tarea"])
-def tarea(message):
-    bot.send_message(message.chat.id,
-    "📺 TAREA DISPONIBLE\n\n"
-    "1. Ve a YouTube\n"
-    "2. Busca: 'viajes Noruega'\n"
-    "3. Dale 👍 y suscríbete\n"
-    "4. Escribe: listo\n\n"
-    "💰 Pago: 10 Bs")
 
 # ── SALDO ──
 @bot.message_handler(commands=["saldo"])
@@ -78,10 +66,10 @@ def mensajes(message):
         "📩 Contacta al admin")
 
     elif "hola" in texto:
-        bot.send_message(user_id, "Hola 👋 usa /tarea para empezar")
+        bot.send_message(user_id, "Hola 👋 usa /vip para ver los niveles")
 
     else:
-        bot.send_message(user_id, "❓ Usa /tarea para comenzar")
+        bot.send_message(user_id, "❓ Usa /vip para ver los niveles disponibles")
 
 print("✅ Bot activo...")
 bot.infinity_polling()
