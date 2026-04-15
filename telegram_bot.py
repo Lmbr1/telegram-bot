@@ -1,7 +1,6 @@
 import os
 import telebot
 
-# 🔑 Obtener token desde Railway
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 if not TOKEN:
@@ -11,65 +10,113 @@ bot = telebot.TeleBot(TOKEN)
 
 usuarios = {}
 
-# ── START ──
+SALUDOS = [
+    "hola", "buen dia", "buenos dias", "buen día",
+    "buenas tardes", "buenas noches", "hey", "hi"
+]
+
+def asegurar_usuario(user_id):
+    if user_id not in usuarios:
+        usuarios[user_id] = {
+            "saldo": 0,
+            "etapa": "inicio"
+        }
+
 @bot.message_handler(commands=["start"])
 def start(message):
     user_id = message.chat.id
-    usuarios[user_id] = {"saldo": 0}
+    asegurar_usuario(user_id)
 
-    bot.send_message(user_id,
-    "👋 Bienvenido al sistema de tareas\n\n"
-    "💰 Gana dinero realizando tareas simples\n"
-    "📊 Ganancias: 5 - 50 Bs por tarea\n\n"
-    "📌 Comandos:\n"
-    "/vip - Ver niveles VIP\n"
-    "/saldo - Ver saldo")
+    usuarios[user_id]["etapa"] = "inicio"
 
-# ── SALDO ──
+    bot.send_message(
+        user_id,
+        "👋 Hola\n\n"
+        "¿Quieres saber mas sobre mi trabajo?\n"
+        "El trabajo consiste en darle like a videos de youtube, no te tomara mucho tiempo y podras hacerlo en tus tiempos libres, por cada like que
+        des se acumulan 5 Bs, y aparte hay tareas vip a las que podras ingrsar, te interesa?.\n\n"
+        "Escriba 'hola' para comenzar o use /vip para ver los niveles."
+    )
+
 @bot.message_handler(commands=["saldo"])
 def saldo(message):
     user_id = message.chat.id
+    asegurar_usuario(user_id)
+    bot.send_message(user_id, f"💰 Su saldo registrado es: {usuarios[user_id]['saldo']} Bs")
 
-    if user_id not in usuarios:
-        usuarios[user_id] = {"saldo": 0}
-
-    saldo = usuarios[user_id]["saldo"]
-    bot.send_message(user_id, f"💰 Tu saldo: {saldo} Bs")
-
-# ── VIP ──
 @bot.message_handler(commands=["vip"])
 def vip(message):
-    bot.send_message(message.chat.id,
-    "💎 NIVELES VIP:\n\n"
-    "VIP 1 → 200 Bs → gana 260 Bs\n"
-    "VIP 2 → 500 Bs → gana 650 Bs\n"
-    "VIP 3 → 800 Bs → gana 1040 Bs\n\n"
-    "📩 Escribe: comprar vip")
-
-# ── RESPUESTAS ──
-@bot.message_handler(func=lambda msg: True)
-def mensajes(message):
-    texto = message.text.lower()
     user_id = message.chat.id
+    asegurar_usuario(user_id)
 
-    # 🔧 evitar crash si no existe usuario
-    if user_id not in usuarios:
-        usuarios[user_id] = {"saldo": 0}
+    bot.send_message(
+        user_id,
+        "💎 NIVELES VIP DISPONIBLES:\n\n"
+        "VIP 1 → 200 Bs → retorno referencial 260 Bs\n"
+        "VIP 2 → 500 Bs → retorno referencial 650 Bs\n"
+        "VIP 3 → 800 Bs → retorno referencial 1040 Bs\n\n"
+        "📩 Escriba: comprar vip\n"
+        "📌 También puede escribir: tarea"
+    )
 
-    if texto == "listo":
-        usuarios[user_id]["saldo"] += 10
-        bot.send_message(user_id, "✅ Tarea completada\n💰 +10 Bs agregados")
+@bot.message_handler(func=lambda msg: True, content_types=["text"])
+def mensajes(message):
+    user_id = message.chat.id
+    texto = message.text.strip().lower()
+
+    asegurar_usuario(user_id)
+
+    if texto in SALUDOS:
+        usuarios[user_id]["etapa"] = "oferta"
+        bot.send_message(
+            user_id,
+            "Hola, ¿le gustaría ganar dinero?\n\n"
+            "Es muy facil solo te tomara unos minutos realizar, las tareas.\n\n"
+            "Si desea continuar, responda: si quiero"
+        )
+
+    elif texto == "si quiero":
+        if usuarios[user_id]["etapa"] == "oferta":
+            usuarios[user_id]["etapa"] = "continuar"
+            bot.send_message(
+                user_id,
+                "Perfecto.\n\n"
+                "Para continuar, escriba /vip y revise los niveles disponibles.\n"
+                "Luego podrá escribir 'tarea' para ver una actividad de ejemplo."
+            )
+        else:
+            bot.send_message(user_id, "Primero escriba 'hola' para iniciar.")
+
+    elif texto == "tarea":
+        usuarios[user_id]["etapa"] = "tarea"
+        bot.send_message(
+            user_id,
+            "📺 TAREA DE EJEMPLO\n\n"
+            "1. Abra YouTube\n"
+            "2. Busque un video promocional\n"
+            "3. Interactúe con el contenido\n"
+            "4. Escriba: listo\n\n"
+            "💰 Bonificación demostrativa: 5 Bs"
+        )
+
+    elif texto == "listo":
+        usuarios[user_id]["saldo"] += 5
+        bot.send_message(
+            user_id,
+            f"✅ Registro completado.\n💰 Se añadieron 5 Bs.\nSaldo actual: {usuarios[user_id]['saldo']} Bs"
+        )
 
     elif "comprar vip" in texto:
-        bot.send_message(user_id,
-        "💳 Para comprar VIP envía comprobante\n"
-        "📩 Contacta al admin")
-
-    elif "hola" in texto:
-        bot.send_message(user_id, "Hola 👋 usa /vip para ver los niveles")
+        bot.send_message(
+            user_id,
+            "💳 Para información sobre membresías VIP, envíe su comprobante o contacte al administrador."
+        )
 
     else:
-        bot.send_message(user_id, "❓ Usa /vip para ver los niveles disponibles")
+        bot.send_message(
+            user_id,
+            "Escriba 'hola' para comenzar, /vip para ver niveles, 'tarea' para una actividad o /saldo para ver su saldo."
+        )
 
 print("✅ Bot activo...")
 bot.infinity_polling()
