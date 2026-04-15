@@ -1,7 +1,11 @@
 import os
 import telebot
 
+# 🔑 Obtener token desde Railway
 TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+if not TOKEN:
+    raise Exception("Falta TELEGRAM_TOKEN en Railway")
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -10,9 +14,10 @@ usuarios = {}
 # ── START ──
 @bot.message_handler(commands=["start"])
 def start(message):
-    usuarios[message.chat.id] = {"saldo": 0}
+    user_id = message.chat.id
+    usuarios[user_id] = {"saldo": 0}
 
-    bot.send_message(message.chat.id,
+    bot.send_message(user_id,
     "👋 Bienvenido al sistema de tareas\n\n"
     "💰 Gana dinero realizando tareas simples\n"
     "📊 Ganancias: 5 - 50 Bs por tarea\n\n"
@@ -29,14 +34,19 @@ def tarea(message):
     "1. Ve a YouTube\n"
     "2. Busca: 'viajes Noruega'\n"
     "3. Dale 👍 y suscríbete\n"
-    "4. Envía 'listo'\n\n"
+    "4. Escribe: listo\n\n"
     "💰 Pago: 10 Bs")
 
 # ── SALDO ──
 @bot.message_handler(commands=["saldo"])
 def saldo(message):
-    saldo = usuarios.get(message.chat.id, {}).get("saldo", 0)
-    bot.send_message(message.chat.id, f"💰 Tu saldo: {saldo} Bs")
+    user_id = message.chat.id
+
+    if user_id not in usuarios:
+        usuarios[user_id] = {"saldo": 0}
+
+    saldo = usuarios[user_id]["saldo"]
+    bot.send_message(user_id, f"💰 Tu saldo: {saldo} Bs")
 
 # ── VIP ──
 @bot.message_handler(commands=["vip"])
@@ -54,11 +64,12 @@ def mensajes(message):
     texto = message.text.lower()
     user_id = message.chat.id
 
-   if user_id not in usuarios:
-    usuarios[user_id] = {"saldo": 0}
+    # 🔧 evitar crash si no existe usuario
+    if user_id not in usuarios:
+        usuarios[user_id] = {"saldo": 0}
 
-if texto == "listo":
-    usuarios[user_id]["saldo"] += 10
+    if texto == "listo":
+        usuarios[user_id]["saldo"] += 10
         bot.send_message(user_id, "✅ Tarea completada\n💰 +10 Bs agregados")
 
     elif "comprar vip" in texto:
@@ -72,5 +83,5 @@ if texto == "listo":
     else:
         bot.send_message(user_id, "❓ Usa /tarea para comenzar")
 
-print("Bot activo...")
+print("✅ Bot activo...")
 bot.infinity_polling()
